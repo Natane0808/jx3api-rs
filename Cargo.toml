@@ -1,15 +1,29 @@
 [package]
-name = "jx3api-rs"
+name = "jx3-api"
 version = "0.1.0"
 edition = "2024"
+authors = ["natane"]
+readme = "README.md"
+license = "MIT"
+description = "JX3API的Rust SDK"
+keywords = ["jx3", "jx3-api"]
+repository = "https://github.com/Natane0808/jx3api-rs"
 
 [dependencies]
 reqwest = { version = "0.12.23", features = ["json"] }
 tokio = { version = "1.47.1", features = ["full"] }
 serde_json = { version = "1.0.145" }
-
+serde = { version = "1.0.228", features = ["derive"] }
 
 
 [features]
 default = []
-vip = []
+
+all = ["vip1", "vip2"]
+
+
+vip1 = []
+
+vip2 = []
+
+
