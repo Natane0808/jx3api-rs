@@ -801,6 +801,7 @@ python scripts/probe_api.py
 jx3-api/
 ├── Cargo.toml
 ├── README.md
+├── CHANGELOG.md                # 版本变更记录
 ├── LICENSE
 ├── openapi/                    # 官方 OpenAPI 规范快照
 │   ├── openapi.json            # 82 个 HTTP 接口
@@ -830,6 +831,10 @@ jx3-api/
     ├── models/                 # 与 api/ 一一对应的数据模型
     └── socket/                 # WebSocket 客户端（feature = "websocket"）
 ```
+
+## 更新日志
+
+版本变更与破坏性改动见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 
