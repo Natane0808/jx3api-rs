@@ -68,9 +68,9 @@ pub struct ArenaRecentQuery {
     /// 角色名称（必填）。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// 比赛模式，可选，官方默认 `0`。
+    /// 比赛模式，可选，官方默认 `0`（官方 Python SDK 中为整数）。
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mode: Option<String>,
+    pub mode: Option<i64>,
 }
 
 impl ArenaRecentQuery {
@@ -91,9 +91,9 @@ impl ArenaRecentQuery {
         self
     }
 
-    /// 设置比赛模式。
-    pub fn mode(mut self, mode: impl Into<String>) -> Self {
-        self.mode = Some(mode.into());
+    /// 设置比赛模式（整数，官方默认 `0`）。
+    pub fn mode(mut self, mode: i64) -> Self {
+        self.mode = Some(mode);
         self
     }
 }
@@ -262,7 +262,7 @@ mod tests {
         let query = ArenaRecentQuery::new()
             .server("长安城")
             .name("漓心")
-            .mode("1");
+            .mode(1);
         let encoded = serde_urlencoded::to_string(&query).unwrap();
         assert!(encoded.contains("server="));
         assert!(encoded.contains("name="));

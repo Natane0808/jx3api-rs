@@ -160,6 +160,23 @@ pub struct HomeFurniture {
    `#[serde(flatten)] extra: HashMap<String, serde_json::Value>`。
 7. 每个公开字段都要有 `///` 文档（crate 开了 `#![warn(missing_docs)]`）。
 
+### 与官方 SDK 的交叉核对
+
+官方各语言 SDK **并不处于同一代 API 上**，核对模型时要注意这一点：
+
+| SDK | 最后更新 | 使用的路径 | 是否对齐当前 API |
+| --- | --- | --- | --- |
+| [JX3API/jx3api-py](https://github.com/JX3API/jx3api-py) | 2026-07 | `/arena/awesome` 等（无 `/data` 前缀） | ✅ 唯一对齐当前 REST 路径 |
+| [JX3API/JX3API-TS](https://github.com/JX3API/JX3API-TS) | 2026-04 | `/data/arena/awesome` 等 | ❌ 仍是旧 API |
+| [JX3API/jx3api-go](https://github.com/JX3API/jx3api-go) | 2026-05 | `/data/...` | ❌ 仍是旧 API |
+| [JX3API/JX3API-JAVA](https://github.com/JX3API/JX3API-JAVA) | 2025-05 | `/data/...` | ❌ 仍是旧 API |
+
+因此字段以 **Python SDK 的 `jx3api.pyi` 为准**。`arena` / `school` / `fraud` /
+`reward` / `sound` 这 5 个无成功夹具的域，其 15 个结构体已与 pyi 逐字段核对一致
+（比对方式：解析 TypedDict 与 Rust 结构体的 `serde(rename)` 目标名，统一成
+snake_case 后比较字段集合）。跨 SDK 出现分歧的字段（例如 `reward` 的 camelCase
+与旧 Go/Java SDK 的 snake_case、`school/seniority` 的两代字段）以 Python SDK 为准。
+
 ## 5. 离线夹具测试
 
 `tests/fixtures/<path_underscored>.json` 保存了真实响应（`scripts/probe_api.py` 抓取）。
