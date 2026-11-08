@@ -170,7 +170,19 @@ async fn live_tuilan_achievement() {
     match client.tuilan().achievement(&query).await {
         Ok(value) => {
             assert!(!value.is_null(), "data 不应为 null");
-            eprintln!("/tuilan/achievement 解析成功：{}", value);
+            // 真实响应是「角色名片 + data 分桶」的裸字典，这里只校验关键结构。
+            assert!(value.get("data").is_some(), "响应应包含 data 分桶");
+            assert!(
+                value
+                    .get("roleName")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|name| !name.is_empty()),
+                "roleName 不应为空"
+            );
+            eprintln!(
+                "/tuilan/achievement 解析成功（data 分桶 {} 个）",
+                value["data"].as_object().map_or(0, |buckets| buckets.len())
+            );
         }
         Err(err) if skip_if_unavailable(&err) => skip!("账号未绑定角色或暂无资历数据：{err}"),
         Err(err) => panic!("/tuilan/achievement 解析失败：{err}"),
