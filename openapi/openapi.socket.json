@@ -1,0 +1,2778 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "剑网3 WebSocket 推送",
+    "version": "1.0.0",
+    "description": "游戏世界事件实时推送（服务端 → 客户端）。连接后按 action 区分消息，data 在 detail 字段。"
+  },
+  "servers": [
+    {
+      "url": "wss://socket.nicemoe.cn"
+    }
+  ],
+  "x-render": "push",
+  "x-token": {
+    "show": true,
+    "type": 2
+  },
+  "x-sdks": null,
+  "x-ui": {
+    "home": {
+      "title": "JX3API",
+      "lead": "剑网3 游戏事件实时推送（WebSocket），左侧选择消息即可查看下发 JSON 格式。",
+      "stats": true,
+      "statLabels": [
+        "消息总数",
+        "功能模块",
+        "功能分类"
+      ]
+    }
+  },
+  "x-announcement": {
+    "enabled": false,
+    "version": 2026072101,
+    "title": "文档公告",
+    "body": "<p>公告正文（富文本，可用换行/颜色/加粗）。</p>"
+  },
+  "x-envelope": {
+    "action": "<action>",
+    "status": "success",
+    "detail": "<下方字段>"
+  },
+  "tags": [
+    {
+      "name": "奇遇事件"
+    },
+    {
+      "name": "马场事件"
+    },
+    {
+      "name": "扶摇事件"
+    },
+    {
+      "name": "的卢事件"
+    },
+    {
+      "name": "掉落交易"
+    },
+    {
+      "name": "江湖事件"
+    },
+    {
+      "name": "阵营祭祀"
+    },
+    {
+      "name": "关隘首领"
+    },
+    {
+      "name": "宣战约战"
+    },
+    {
+      "name": "据点攻防"
+    },
+    {
+      "name": "系统通知"
+    },
+    {
+      "name": "社交动态"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "世界事件",
+      "tags": [
+        "奇遇事件",
+        "马场事件",
+        "扶摇事件",
+        "的卢事件",
+        "掉落交易",
+        "江湖事件"
+      ]
+    },
+    {
+      "name": "阵营攻防",
+      "tags": [
+        "阵营祭祀",
+        "关隘首领",
+        "宣战约战",
+        "据点攻防"
+      ]
+    },
+    {
+      "name": "定时推送",
+      "tags": [
+        "系统通知",
+        "社交动态"
+      ]
+    }
+  ],
+  "paths": {
+    "/socket/1001": {
+      "post": {
+        "tags": [
+          "奇遇事件"
+        ],
+        "summary": "奇遇触发",
+        "description": "保存奇遇数据并触发处理逻辑",
+        "x-level": 3,
+        "x-action": 1001,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "角色名/事件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "event",
+            "in": "query",
+            "required": true,
+            "description": "奇遇名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1002": {
+      "post": {
+        "tags": [
+          "马场事件"
+        ],
+        "summary": "马驹刷新",
+        "description": "马驹刷新推送处理",
+        "x-level": 3,
+        "x-action": 1002,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1003": {
+      "post": {
+        "tags": [
+          "马场事件"
+        ],
+        "summary": "马驹捕获",
+        "description": "马驹捕获处理",
+        "x-level": 3,
+        "x-action": 1003,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "角色名/事件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "horse",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1005": {
+      "post": {
+        "tags": [
+          "扶摇事件"
+        ],
+        "summary": "扶摇开启",
+        "description": "扶摇开启处理",
+        "x-level": 3,
+        "x-action": 1005,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1006": {
+      "post": {
+        "tags": [
+          "扶摇事件"
+        ],
+        "summary": "扶摇点名",
+        "description": "扶摇点名处理",
+        "x-level": 3,
+        "x-action": 1006,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "角色名/事件名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1008": {
+      "post": {
+        "tags": [
+          "的卢事件"
+        ],
+        "summary": "的卢每日",
+        "description": "生成并处理的卢事件每日数据",
+        "x-level": 3,
+        "x-action": 1008,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "角色名/事件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1009": {
+      "post": {
+        "tags": [
+          "的卢事件"
+        ],
+        "summary": "的卢刷新",
+        "description": "的卢刷新处理",
+        "x-level": 3,
+        "x-action": 1009,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "refresh_time",
+            "in": "query",
+            "required": true,
+            "description": "刷新时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1010": {
+      "post": {
+        "tags": [
+          "的卢事件"
+        ],
+        "summary": "的卢捕获",
+        "description": "的卢捕获处理",
+        "x-level": 3,
+        "x-action": 1010,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "capture_camp_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "capture_role_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "capture_time",
+            "in": "query",
+            "required": true,
+            "description": "捕获时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1011": {
+      "post": {
+        "tags": [
+          "的卢事件"
+        ],
+        "summary": "的卢拍卖",
+        "description": "的卢拍卖处理",
+        "x-level": 3,
+        "x-action": 1011,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auction_camp_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auction_role_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auction_amount",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auction_time",
+            "in": "query",
+            "required": true,
+            "description": "拍卖时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1012": {
+      "post": {
+        "tags": [
+          "掉落交易"
+        ],
+        "summary": "副本掉落 / 私货",
+        "description": "副本掉落/交易行私货处理",
+        "x-level": 3,
+        "x-action": 1012,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": true,
+            "description": "角色名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_name",
+            "in": "query",
+            "required": true,
+            "description": "物品名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_amount",
+            "in": "query",
+            "required": true,
+            "description": "成交/价格",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1013": {
+      "post": {
+        "tags": [
+          "掉落交易"
+        ],
+        "summary": "阵营拍卖",
+        "description": "阵营拍卖处理",
+        "x-level": 3,
+        "x-action": 1013,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": true,
+            "description": "角色名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_name",
+            "in": "query",
+            "required": true,
+            "description": "物品名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_amount",
+            "in": "query",
+            "required": true,
+            "description": "成交/价格",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1014": {
+      "post": {
+        "tags": [
+          "江湖事件"
+        ],
+        "summary": "诛恶事件",
+        "description": "诛恶事件处理",
+        "x-level": 3,
+        "x-action": 1014,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1015": {
+      "post": {
+        "tags": [
+          "江湖事件"
+        ],
+        "summary": "追魂点名",
+        "description": "追魂点名处理",
+        "x-level": 3,
+        "x-action": 1015,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": true,
+            "description": "角色名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_server",
+            "in": "query",
+            "required": true,
+            "description": "角色所在服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1017": {
+      "post": {
+        "tags": [
+          "阵营祭祀"
+        ],
+        "summary": "阵营祭祀",
+        "description": "阵营祭祀处理",
+        "x-level": 3,
+        "x-action": 1017,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": true,
+            "description": "角色名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1018": {
+      "post": {
+        "tags": [
+          "关隘首领"
+        ],
+        "summary": "关隘首领",
+        "description": "关隘首领处理",
+        "x-level": 3,
+        "x-action": 1018,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leader_name",
+            "in": "query",
+            "required": true,
+            "description": "首领名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stage_name",
+            "in": "query",
+            "required": true,
+            "description": "关隘名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1101": {
+      "post": {
+        "tags": [
+          "宣战约战"
+        ],
+        "summary": "领地宣战·开始",
+        "description": "领地宣战·开始处理",
+        "x-level": 3,
+        "x-action": 1101,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_type",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "declaring_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accepting_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": true,
+            "description": "开始时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1102": {
+      "post": {
+        "tags": [
+          "宣战约战"
+        ],
+        "summary": "领地宣战·结束",
+        "description": "领地宣战·结束处理",
+        "x-level": 3,
+        "x-action": 1102,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_type",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "declaring_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accepting_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "victory_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "victory_score",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": true,
+            "description": "结束时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1103": {
+      "post": {
+        "tags": [
+          "宣战约战"
+        ],
+        "summary": "帮会宣战·开始",
+        "description": "帮会宣战·开始处理",
+        "x-level": 3,
+        "x-action": 1103,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_type",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "declaring_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accepting_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "duration_hours",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": true,
+            "description": "开始时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1104": {
+      "post": {
+        "tags": [
+          "宣战约战"
+        ],
+        "summary": "帮会宣战·结束",
+        "description": "帮会宣战·结束处理",
+        "x-level": 3,
+        "x-action": 1104,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "battlefield_type",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "declaring_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accepting_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": true,
+            "description": "结束时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1105": {
+      "post": {
+        "tags": [
+          "宣战约战"
+        ],
+        "summary": "帮会约战·完胜",
+        "description": "帮会约战·完胜处理",
+        "x-level": 3,
+        "x-action": 1105,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "challenge_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "opponent_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "victory_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1111": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "抢占粮仓",
+        "description": "据点战况-抢占粮仓处理",
+        "x-level": 3,
+        "x-action": 1111,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1112": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "大旗重置",
+        "description": "据点战况-大旗重置处理",
+        "x-level": 3,
+        "x-action": 1112,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1113": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "大旗被夺",
+        "description": "据点战况-大旗被夺处理",
+        "x-level": 3,
+        "x-action": 1113,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "map_name",
+            "in": "query",
+            "required": true,
+            "description": "地图名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1114": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "据点占领",
+        "description": "据点战况-据点占领处理",
+        "x-level": 3,
+        "x-action": 1114,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1115": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "据点占领（无帮会）",
+        "description": "据点战况-据点占领处理（无帮会）",
+        "x-level": 3,
+        "x-action": 1115,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "castle_name",
+            "in": "query",
+            "required": true,
+            "description": "据点名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1116": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "小攻防贡献（非开战）",
+        "description": "贡献排行-小攻防（贡献前列非开战据点帮会）处理",
+        "x-level": 3,
+        "x-action": 1116,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1117": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "小攻防贡献",
+        "description": "贡献排行-小攻防（开战据点 + 非开战据点帮会）处理",
+        "x-level": 3,
+        "x-action": 1117,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1118": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "大攻防贡献",
+        "description": "贡献排行-大攻防处理",
+        "x-level": 3,
+        "x-action": 1118,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1119": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "战利品竞拍",
+        "description": "大小攻防-战利品竞拍",
+        "x-level": 3,
+        "x-action": 1119,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": true,
+            "description": "角色名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_amount",
+            "in": "query",
+            "required": true,
+            "description": "成交/价格",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_name",
+            "in": "query",
+            "required": true,
+            "description": "物品名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1120": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "小攻防分红",
+        "description": "拍卖分红-小攻防处理",
+        "x-level": 3,
+        "x-action": 1120,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "split_amount",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1121": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "大攻防分红",
+        "description": "拍卖分红-大攻防处理",
+        "x-level": 3,
+        "x-action": 1121,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_name",
+            "in": "query",
+            "required": true,
+            "description": "帮会名",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "split_amount",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1122": {
+      "post": {
+        "tags": [
+          "据点攻防"
+        ],
+        "summary": "大攻防分红（含指挥）",
+        "description": "拍卖分红-大攻防（含指挥帮会）处理",
+        "x-level": 3,
+        "x-action": 1122,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "camp_name",
+            "in": "query",
+            "required": true,
+            "description": "阵营",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tong_names",
+            "in": "query",
+            "required": true,
+            "description": "帮会名列表",
+            "schema": {
+              "type": "array"
+            }
+          },
+          {
+            "name": "chief_tong_name",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "split_amount",
+            "in": "query",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/1201": {
+      "post": {
+        "tags": [
+          "社交动态"
+        ],
+        "summary": "微博更新",
+        "description": "触发后续处理操作",
+        "x-level": 3,
+        "x-action": 1201,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "user_name",
+            "in": "query",
+            "required": true,
+            "description": "微博用户",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "description": "用户ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "article_id",
+            "in": "query",
+            "required": true,
+            "description": "微博ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "article_text",
+            "in": "query",
+            "required": true,
+            "description": "正文",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "created_at",
+            "in": "query",
+            "required": true,
+            "description": "发布时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "description": "链接",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2001": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "开服状态",
+        "description": "发送服务器状态更新通知",
+        "x-level": 0,
+        "x-action": 2001,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "description": "开服状态(0关/1开)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2002": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "官方新闻",
+        "description": "检查新闻并将新的新闻项存入数据库",
+        "x-level": 0,
+        "x-action": 2002,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "description": "类型",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "description": "标题",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "description": "链接",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "日期",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2003": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "版本更新",
+        "description": "检查更新补丁并处理更新",
+        "x-level": 0,
+        "x-action": 2003,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "now_version",
+            "in": "query",
+            "required": true,
+            "description": "当前版本",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "new_version",
+            "in": "query",
+            "required": true,
+            "description": "最新版本",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "package_num",
+            "in": "query",
+            "required": true,
+            "description": "更新包数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "package_size",
+            "in": "query",
+            "required": true,
+            "description": "更新大小",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2004": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "八卦速报",
+        "description": "发送符合通知条件的主题信息",
+        "x-level": 0,
+        "x-action": 2004,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "tags",
+            "in": "query",
+            "required": true,
+            "description": "分类",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "description": "大区",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tieba",
+            "in": "query",
+            "required": true,
+            "description": "贴吧名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "description": "标题",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "description": "链接",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "日期",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2005": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "关隘首领",
+        "description": "发送据点冷却重置通知",
+        "x-level": 0,
+        "x-action": 2005,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "server",
+            "in": "query",
+            "required": true,
+            "description": "服务器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": true,
+            "description": "据点/关卡",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "description": "开始时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    },
+    "/socket/2006": {
+      "post": {
+        "tags": [
+          "系统通知"
+        ],
+        "summary": "云从预告",
+        "description": "发送地图事件触发通知",
+        "x-level": 0,
+        "x-action": 2006,
+        "x-push": true,
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "角色名/事件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "site",
+            "in": "query",
+            "required": true,
+            "description": "地点",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "desc",
+            "in": "query",
+            "required": true,
+            "description": "描述",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "事件时间戳",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "下发成功"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,29 +1,46 @@
 [package]
 name = "jx3-api"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-authors = ["natane"]
+rust-version = "1.85"
+description = "JX3API（剑网3 官方数据接口 https://www.jx3api.com）的 Rust SDK"
+documentation = "https://docs.rs/jx3-api"
 readme = "README.md"
-license = "MIT"
-description = "JX3API的Rust SDK"
-keywords = ["jx3", "jx3-api"]
 repository = "https://github.com/Natane0808/jx3api-rs"
+license = "MIT"
+keywords = ["api", "jx3", "jx3-api", "jx3api", "sdk"]
+categories = ["api-bindings", "asynchronous", "web-programming"]
+
+# 子表必须紧跟在 [package] 之后：TOML 工具（Tombi）按「首段表名」分组，
+# 若中间插入 [dependencies] 等表会被判定为 tables-out-of-order。
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
-reqwest = { version = "0.12.23", features = ["json"] }
-tokio = { version = "1.47.1", features = ["full"] }
-serde_json = { version = "1.0.145" }
-serde = { version = "1.0.228", features = ["derive"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_urlencoded = "0.7"
+thiserror = "2"
 
+# WebSocket 实时事件（可选）
+futures-util = { version = "0.3", default-features = false, features = ["sink"], optional = true }
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"], optional = true }
+tokio-tungstenite = {
+  version = "0.30",
+  default-features = false,
+  features = [
+    "connect",
+    "native-tls",
+  ],
+  optional = true
+}
+
+[dev-dependencies]
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
 
 [features]
 default = []
-
-all = ["vip1", "vip2"]
-
-
-vip1 = []
-
-vip2 = []
-
-
+# 启用 WebSocket 实时事件推送客户端
+websocket = ["dep:futures-util", "dep:tokio", "dep:tokio-tungstenite"]
