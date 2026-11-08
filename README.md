@@ -98,7 +98,7 @@ async fn main() -> jx3_api::Result<()> {
 cargo run --example basic
 ```
 
-会员接口（VIP1 / VIP2）需要站点令牌，从环境变量读取，**不要把令牌写进代码或提交到仓库**：
+会员接口（VIP1 / VIP2）需要站点令牌，从环境变量读取：
 
 ```rust
 use jx3_api::api::role::RoleDetailQuery;
