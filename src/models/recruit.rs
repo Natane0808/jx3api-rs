@@ -55,6 +55,9 @@ pub struct RecruitRecord {
     /// 阵营 id。
     #[serde(rename = "campId")]
     pub camp_id: i64,
+    /// 阵营名称，例如 `浩气盟` / `恶人谷`。
+    #[serde(rename = "campName")]
+    pub camp_name: String,
     /// 标记位。
     #[serde(rename = "flagBits")]
     pub flag_bits: i64,
@@ -109,28 +112,33 @@ mod tests {
 
     #[test]
     fn parses_success_payload() {
+        // 结构与真实响应一致（区服 / 角色名已匿名化）：含 campName、labelIdComment
+        // 与 variantInfo 四个字段。
         let raw = r#"{"code":200,"msg":"success","data":[
-            {"activityId":"1024","activityName":"英雄冷龙峰","typeName":"团队",
-             "subTypeName":"教学团","miniAvatarId":18,"createTime":1794000000,
-             "currentMemberCount":10,"maxMemberCount":25,"forceId":2,
-             "lastModifyTime":1794000100,"roleName":"漓心","roleType":2,
-             "roleLevel":50,"kungfuId":10002,"campId":1,"flagBits":0,
-             "commentText":"来熟练","labelIdTable":[1,2],"labelIdComment":"速刷",
-             "variantInfo":{"isSwitchServer":false,"publisherId":1024,"pushId":2048,"roleId":29450102}}
+            {"activityId":"320","activityName":"英雄大阳津","typeName":"小队秘境",
+             "subTypeName":"苍生铸世","miniAvatarId":397,"createTime":1794117355,
+             "currentMemberCount":4,"maxMemberCount":5,"forceId":215,
+             "lastModifyTime":1794117466,"roleName":"团长甲","roleType":6,
+             "roleLevel":50,"kungfuId":10786,"campId":2,"campName":"恶人谷",
+             "flagBits":0,"commentText":"来坦=1","labelIdTable":[],
+             "labelIdComment":"","variantInfo":{"isSwitchServer":false,
+             "publisherId":16255005,"pushId":2178,"roleId":16255005}}
         ]}"#;
         let envelope: ApiResponse<Vec<RecruitRecord>> = parse(raw);
         assert!(envelope.is_success());
         let items = envelope.data.expect("data 不应为空");
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].activity_name, "英雄冷龙峰");
-        assert_eq!(items[0].role_name, "漓心");
-        assert_eq!(items[0].label_id_table, vec![1, 2]);
-        assert_eq!(items[0].comment_text, "来熟练");
+        assert_eq!(items[0].activity_name, "英雄大阳津");
+        assert_eq!(items[0].role_name, "团长甲");
+        assert_eq!(items[0].camp_id, 2);
+        assert_eq!(items[0].camp_name, "恶人谷");
+        assert!(items[0].label_id_table.is_empty());
+        assert_eq!(items[0].comment_text, "来坦=1");
         let variant = items[0].variant_info.as_ref().expect("应解析 variantInfo");
         assert!(!variant.is_switch_server);
-        assert_eq!(variant.publisher_id, 1024);
-        assert_eq!(variant.push_id, 2048);
-        assert_eq!(variant.role_id, 29_450_102);
+        assert_eq!(variant.publisher_id, 16_255_005);
+        assert_eq!(variant.push_id, 2178);
+        assert_eq!(variant.role_id, 16_255_005);
     }
 
     #[test]

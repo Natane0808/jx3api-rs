@@ -233,6 +233,40 @@ impl<'de> Visitor<'de> for FlexibleBoolVisitor {
     }
 }
 
+/// 把 JSON `null` 当作类型的默认值（[`Default::default`]）。
+///
+/// 用于「官方规范标注必有、但线上偶尔返回 `null`」的嵌套对象字段。配合
+/// `#[serde(default)]` 使用时：
+///
+/// * 字段**缺失** → 走 `Default`；
+/// * 字段为 `null` → 也走 `Default`（而不是整个响应解析失败）；
+/// * 字段是对象 → 正常反序列化。
+///
+/// ```rust
+/// # use serde::Deserialize;
+/// #[derive(Deserialize, Default)]
+/// # struct Detail { value: i64 }
+/// #[derive(Deserialize)]
+/// struct Foo {
+///     #[serde(default, deserialize_with = "jx3_api::serde_util::null_as_default")]
+///     pub detail: Detail,
+/// }
+///
+/// let missing: Foo = serde_json::from_str(r#"{}"#).unwrap();
+/// let null: Foo = serde_json::from_str(r#"{"detail":null}"#).unwrap();
+/// let object: Foo = serde_json::from_str(r#"{"detail":{"value":7}}"#).unwrap();
+/// assert_eq!(missing.detail.value, 0);
+/// assert_eq!(null.detail.value, 0);
+/// assert_eq!(object.detail.value, 7);
+/// ```
+pub fn null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de> + Default,
+{
+    Option::<T>::deserialize(deserializer).map(Option::unwrap_or_default)
+}
+
 /// 数字 / 字符串双形态的字段类型。
 ///
 /// 序列化为 JSON 时始终输出数字；反序列化时接受 JSON 数字、数字字符串与
@@ -320,5 +354,27 @@ mod tests {
             FlexNumber(0)
         );
         assert_eq!(serde_json::to_string(&FlexNumber(42)).unwrap(), "42");
+    }
+
+    #[test]
+    fn null_as_default_handles_missing_null_and_object() {
+        #[derive(Debug, Default, PartialEq, Deserialize)]
+        struct Detail {
+            value: i64,
+        }
+
+        #[derive(Debug, Deserialize)]
+        struct Wrapper {
+            #[serde(default, deserialize_with = "null_as_default")]
+            detail: Detail,
+        }
+
+        let missing: Wrapper = serde_json::from_str(r#"{}"#).unwrap();
+        let null: Wrapper = serde_json::from_str(r#"{"detail":null}"#).unwrap();
+        let object: Wrapper = serde_json::from_str(r#"{"detail":{"value":7}}"#).unwrap();
+
+        assert_eq!(missing.detail, Detail::default());
+        assert_eq!(null.detail, Detail::default());
+        assert_eq!(object.detail.value, 7);
     }
 }

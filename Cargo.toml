@@ -26,15 +26,17 @@ thiserror = "2"
 # WebSocket 实时事件（可选）
 futures-util = { version = "0.3", default-features = false, features = ["sink"], optional = true }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"], optional = true }
-tokio-tungstenite = {
-  version = "0.30",
-  default-features = false,
-  features = [
-    "connect",
-    "native-tls",
-  ],
-  optional = true
-}
+
+# 用子表而非 inline table：Tombi 会按 TOML 1.1 风格把长 inline table 折成多行，
+# 而 Cargo 1.85（本 crate 的 MSRV）只接受 TOML 1.0 的「inline table 必须单行」。
+[dependencies.tokio-tungstenite]
+version = "0.30"
+default-features = false
+features = [
+  "connect",
+  "native-tls",
+]
+optional = true
 
 [dev-dependencies]
 serde_json = "1"

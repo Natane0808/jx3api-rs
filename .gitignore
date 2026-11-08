@@ -20,7 +20,6 @@ target
 
 # RustRover
 .idea/
-Cargo.lock
 
 # Python 缓存
 __pycache__/

@@ -231,15 +231,52 @@ assert_eq!(Endpoint::from_path("/role/detail"), Some(Endpoint::RoleDetail));
 ```bash
 python scripts/verify_coverage.py
 python scripts/gen_readme_table.py --check README.md
+cargo fmt --all --check
+cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-features
-cargo clippy --all-targets --all-features
 ```
 
-## 9. 校验清单
+## 9. CI 与「线上真实响应」测试
+
+### CI
+
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) 在 push / PR 时执行三组只读检查：
+
+| job | 内容 |
+| --- | --- |
+| `build-test` | `cargo fmt --check`、`clippy -D warnings`、`cargo test`（默认 + all-features）、`cargo doc -D warnings`、`cargo package` |
+| `repo-checks` | `scripts/verify_coverage.py`、`scripts/gen_readme_table.py --check`、`tombi lint/format` |
+| `msrv` | 用 `1.85.0` 工具链 `cargo check --all-features`，守住 `rust-version` |
+
+CI 不配置任何令牌，也不会执行线上测试（它们全部 `#[ignore]`）。
+
+### 线上真实响应测试（`tests/live.rs`）
+
+`arena` / `school` / `fraud` / `reward` / `recruit` / `tuilan` / `sound` 这 7 个域没有
+成功夹具（官方快照本身就是错误响应或数据缺失），因此单独提供一组**默认忽略**的线上测试，
+用真实响应验证模型：
+
+```bash
+cargo test --test live -- --ignored --nocapture
+```
+
+* 配置优先级：进程环境变量 → 仓库根目录 `.env`（**已被 `.gitignore` 忽略，绝不入库**）。
+* 支持的变量：`JX3API_TOKEN`（或 `API_TOKEN`）、`JX3API_SERVER`、`JX3API_ROLE`、
+  `JX3API_TICKET`（推栏，`arena`/`school` 需要）、`JX3API_FRAUD_UID`、
+  `JX3API_SCHOOL`（心法名，默认 `冰心诀`）、`JX3API_TTS_APPKEY` / `JX3API_TTS_ACCESS` /
+  `JX3API_TTS_SECRET`（语音合成）。
+* 缺少凭据、或账号本身无数据（404/500）时打印「跳过」并通过；只有**真实成功响应无法解析**
+  才会失败，因此不会因为账号状态误报。
+* 真实区服 / 角色 / 响应只保留在本机，不写入仓库；如需固化为可回归的夹具，请自行脱敏后再提交。
+
+## 10. 校验清单
 
 * [ ] `cargo build --lib` 与 `cargo build --lib --all-features` 通过，无 warning
+* [ ] `cargo fmt --all --check` 通过
 * [ ] `cargo test --all-features` 通过（单元 + 集成 + 文档示例）
-* [ ] `cargo clippy --all-targets --all-features` 无 warning
+* [ ] `cargo clippy --all-targets --all-features -- -D warnings` 无 warning
+* [ ] 改动涉及 `arena` / `school` / `fraud` / `reward` / `recruit` / `tuilan` / `sound` 时，
+      用 `cargo test --test live -- --ignored` 在本地验证真实响应（凭据放 `.env`，不入库）
 * [ ] 每个方法有 rustdoc（含 `# Errors` 与 `no_run` 示例）
 * [ ] 参数名、默认值、取值范围与 OpenAPI 的 `parameters` 一致（Query 字段统一 `Option`，见 §2 必填性约定）
 * [ ] 路径与方法名一一对应 OpenAPI 的 `paths`

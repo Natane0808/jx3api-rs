@@ -84,6 +84,10 @@ pub struct ArenaRecent {
     #[serde(rename = "campId")]
     pub camp_id: serde_json::Value,
     /// 各模式战绩表现（官方 `total=False` 字典：`2v2` / `3v3` / `5v5`）。
+    ///
+    /// 规范把该字段标为必有对象；线上若显式返回 `null`，按空战绩处理，
+    /// 不让整个 `/arena/recent` 响应解析失败。
+    #[serde(deserialize_with = "crate::serde_util::null_as_default")]
     pub performance: ArenaRecentPerformance,
     /// 历史对战记录。
     pub history: Vec<ArenaRecentHistory>,
@@ -284,5 +288,25 @@ mod tests {
         assert_eq!(item.name, "万花");
         assert_eq!(item.this, 0);
         assert_eq!(item.last, 0);
+    }
+
+    /// 规范标注 `performance` 必有，但线上若显式返回 `null`，应降级为空战绩而不是解析失败。
+    #[test]
+    fn performance_null_falls_back_to_default() {
+        let raw = r#"{"code":200,"msg":"success","data":{
+            "zoneName":"电信区","serverName":"长安城","roleName":"漓心"
+        }}"#;
+        let envelope: ApiResponse<ArenaRecent> = parse(raw);
+        let recent = envelope.data.expect("data 不应为空");
+        assert_eq!(recent.role_name, "漓心");
+
+        let raw = r#"{"code":200,"msg":"success","data":{
+            "zoneName":"电信区","serverName":"长安城","roleName":"漓心",
+            "performance":null
+        }}"#;
+        let envelope: ApiResponse<ArenaRecent> = parse(raw);
+        let recent = envelope.data.expect("data 不应为空");
+        assert_eq!(recent.performance.v2v.mmr, 0);
+        assert!(recent.performance.v5v.is_empty());
     }
 }

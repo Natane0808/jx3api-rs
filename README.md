@@ -1,5 +1,6 @@
 # jx3-api
 
+[![CI](https://github.com/Natane0808/jx3api-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/Natane0808/jx3api-rs/actions/workflows/ci.yml)
 [![docs.rs](https://img.shields.io/docsrs/jx3-api)](https://docs.rs/jx3-api)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
@@ -739,12 +740,13 @@ async fn main() -> jx3_api::Result<()> {
 
 ## 测试与夹具
 
-仓库自带两类测试：
+仓库自带三类测试：
 
 | 类型 | 位置 | 是否联网 | 命令 |
 | --- | --- | --- | --- |
 | 单元测试 | `src/**/*.rs` 内的 `#[cfg(test)]` | 否 | `cargo test` |
 | 集成测试 | [`tests/integration.rs`](tests/integration.rs) | 离线部分否 / 线上部分需 `--ignored` | `cargo test --test integration` |
+| 线上真实响应测试 | [`tests/live.rs`](tests/live.rs) | 是（全部 `#[ignore]`） | `cargo test --test live -- --ignored` |
 
 离线测试直接读取 [`tests/fixtures/`](tests/fixtures/) 下的真实响应快照（83 份 JSON，
 覆盖成功与业务错误两类包络；多数文件按「接口路径把 `/` 换成 `_`」命名，
@@ -773,9 +775,19 @@ cargo test --test integration
 # 额外运行线上冒烟测试（需要 JX3API_TOKEN）
 cargo test --test integration -- --ignored
 
+# 运行 7 个「无成功夹具」业务域的真实响应测试（需要令牌与区服/角色等凭据）
+cargo test --test live -- --ignored --nocapture
+
 # 启用 websocket feature 后进行全量测试
 cargo test --all-features
 ```
+
+[`tests/live.rs`](tests/live.rs) 覆盖 `arena` / `school` / `fraud` / `reward` / `recruit` /
+`tuilan` / `sound` 这些没有成功夹具的域：它从环境变量（或仓库根目录的 `.env`，该文件
+已被 `.gitignore` 忽略）读取令牌与查询参数，缺少某项凭据时自动打印「跳过」并通过；
+只有**拿到真实成功响应但模型解析失败**才会报错。支持的变量见该文件头部文档
+（`JX3API_TOKEN`、`JX3API_SERVER`、`JX3API_ROLE`、`JX3API_TICKET`、`JX3API_FRAUD_UID`、
+`JX3API_SCHOOL`、`JX3API_TTS_*`）。真实区服 / 角色 / 响应不会写入仓库。
 
 刷新夹具（会访问真实接口并消耗额度，维护者使用）：
 
