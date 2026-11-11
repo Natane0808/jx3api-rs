@@ -1,0 +1,23 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "level": 2,
+    "used": 321,
+    "remaining": 4679,
+    "each": 1,
+    "expireAt": 0,
+    "valid": true,
+    "history": [
+      {
+        "action": "purchase",
+        "at": 1794106809,
+        "from": null,
+        "to": "jx3api::0606****c11a",
+        "no": "0000000000000000000000",
+        "count": 5000
+      }
+    ]
+  },
+  "time": 1794394269
+}

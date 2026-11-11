@@ -326,3 +326,52 @@ async fn live_sound_converter() {
         Err(err) => panic!("/sound/converter 解析失败：{err}"),
     }
 }
+/// `/token/stats`：令牌配额（`POST`，**不消耗次数**）。
+///
+/// 这条用例不依赖区服 / 角色，只要有令牌就能跑；它同时验证
+/// 「`POST` + 请求体」通道与 `TokenStats` 模型。
+#[tokio::test]
+#[ignore = "线上测试：需要真实令牌，会访问 jx3api.com（不消耗接口次数）"]
+async fn live_token_stats() {
+    let Some(client) = client() else {
+        skip!("缺少 JX3API_TOKEN");
+    };
+
+    let stats = client
+        .quota()
+        .stats()
+        .await
+        .expect("/token/stats 应当返回成功响应");
+    assert!(stats.level >= 1, "令牌档位应为 VIP1 及以上");
+    assert!(stats.valid, "令牌应当有效");
+    assert!(stats.each >= 1, "每次消耗不应为 0");
+    assert_eq!(
+        stats.total_quota(),
+        stats.used.saturating_add(stats.remaining),
+        "总配额应为已用 + 剩余"
+    );
+    eprintln!(
+        "/token/stats：{} 已用 {} / 剩余 {} / 每次 {}",
+        stats.level_name(),
+        stats.used,
+        stats.remaining,
+        stats.each
+    );
+
+    // 查询本身不扣次数：连续两次查询的 used 应当一致。
+    let again = client.quota().stats().await.expect("第二次查询应当成功");
+    assert_eq!(
+        stats.used, again.used,
+        "/token/stats 不应消耗接口次数（used 发生了变化）"
+    );
+
+    // 先校验再加入客户端：用 stats_of 查询同一枚令牌。
+    if let Some(token) = token() {
+        let by_value = client
+            .quota()
+            .stats_of(&token)
+            .await
+            .expect("stats_of 应当返回成功响应");
+        assert_eq!(by_value.remaining, stats.remaining);
+    }
+}

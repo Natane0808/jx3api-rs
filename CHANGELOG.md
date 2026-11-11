@@ -5,6 +5,28 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.1] - 2026-11-11
+
+### Added
+
+- 新增 `client.quota()`：封装 `POST /token/stats`，查询令牌档位（`level_name()`）、
+  已用 / 剩余次数、每次消耗（`each`）、到期时间（`expire_at_unix()` / `is_perpetual()`）、
+  总配额（`total_quota()`）与充值记录 `history`。
+- `TokenApi::stats_of(token)`：在写入客户端之前单独校验任意令牌（令牌不存在时返回
+  `Error::Api { code: 404 }`）。
+- 新增错误变体 `Error::MissingToken`：需要令牌的接口在未配置令牌时**本地拦截**，
+  不发起网络请求。
+- 新增夹具 `tests/fixtures/token_stats.json` 与 `tests/live.rs::live_token_stats`
+  线上用例。
+
+### Notes
+
+- `/token/stats` 是库内唯一的 `POST` + JSON 请求体通道（`Inner::post_json`）；
+  它不在官方 OpenAPI 快照的 82 条路径内，因此**没有** `Endpoint` 变体。
+- 该查询**不消耗接口次数**（实测连续两次查询 `used` 不变）。
+- `Error` 是 `#[non_exhaustive]`，新增变体不破坏现有 `match` 的编译，但如果你写了
+  穷尽匹配，需要补一个分支。
+
 ## [0.2.0] - 2026-11-08
 
 基于官方 OpenAPI 的完整重写（与 0.1.0 不兼容）。
@@ -63,5 +85,6 @@
 
 - 初始版本：基于旧版 `/data` 前缀 + `POST` 请求的接口封装。
 
+[0.2.1]: https://github.com/Natane0808/jx3api-rs/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Natane0808/jx3api-rs/releases/tag/v0.2.0
 [0.1.0]: https://crates.io/crates/jx3-api/0.1.0

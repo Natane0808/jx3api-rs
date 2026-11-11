@@ -44,6 +44,7 @@ pub mod skill;
 pub mod sound;
 pub mod steed;
 pub mod tieba;
+pub mod token;
 pub mod trade;
 pub mod trial;
 pub mod tuilan;

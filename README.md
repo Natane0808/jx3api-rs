@@ -6,6 +6,7 @@
 
 [JX3API](https://www.jx3api.com)（剑网3 官方数据接口）的 Rust SDK：**异步**、**类型安全**，
 覆盖官方 OpenAPI 中的全部 **82 个 HTTP 接口**，并提供可选的 **WebSocket 实时事件**客户端。
+另外单独封装了 OpenAPI 快照之外的 **`POST /token/stats`**（查询令牌剩余次数）。
 
 ```rust
 use jx3_api::Client;
@@ -26,7 +27,7 @@ async fn main() -> jx3_api::Result<()> {
 ## 特性
 
 - **全量覆盖**：按官方 OpenAPI 规范实现全部 82 条 GET 路径，路径与档位与规范一致，
-  参数名、默认值与取值范围也逐项对齐。
+  参数名、默认值与取值范围也逐项对齐；额外提供 `client.quota()` 查询令牌剩余次数。
 - **按业务域拆分**：通过 `client.<域>()` 获取句柄（如 `client.active()`、`client.role()`），
   每个域一个 `XxxApi`，方法名与接口语义一致。
 - **强类型 + 容错**：参数 ≥ 2 的接口提供 `XxxQuery` 查询结构体，结构稳定的响应提供强类型模型
@@ -216,6 +217,49 @@ fn level_demo() {
     assert!(!Endpoint::TradeDemon.is_free());
 }
 ```
+
+## 令牌配额（剩余次数）
+
+`POST /token/stats` 不在官方 OpenAPI 快照的 82 条路径内，但它是每个使用者都会用到的运维接口，
+因此单独封装为 `client.quota()`：
+
+```rust
+use jx3_api::Client;
+
+# async fn demo() -> Result<(), Box<dyn std::error::Error>> {
+let client = Client::builder().token("jx3api::xxxxxxxx").build()?;
+
+let stats = client.quota().stats().await?;
+println!("{} 已用 {} / 剩余 {}（每次消耗 {}）",
+    stats.level_name(), stats.used, stats.remaining, stats.each);
+
+// 永久令牌 expireAt = 0；有期限时给出到期时间戳
+if let Some(expire_at) = stats.expire_at_unix() {
+    println!("将于 {expire_at} 到期");
+}
+
+// 充值 / 变动记录（服务端返回的令牌已做掩码）
+for entry in &stats.history {
+    println!("{} +{} 次 → {}", entry.action, entry.count, entry.to);
+}
+
+// 也可以在写入客户端之前单独校验另一枚令牌
+match client.quota().stats_of("jx3api::yyyyyyyy").await {
+    Ok(other) => println!("另一枚令牌剩余 {}", other.remaining),
+    Err(jx3_api::Error::Api { code: 404, .. }) => println!("令牌不存在"),
+    Err(err) => eprintln!("查询失败：{err}"),
+}
+# Ok(())
+# }
+```
+
+要点：
+
+- **该查询不消耗接口次数**（实测连续调用 `used` 不变），可以在每次请求前放心探测额度。
+- 接口使用 `POST` + JSON 请求体，令牌放在请求体里；这是本库唯一的 `POST` 通道。
+- 客户端未配置令牌时**不发起网络请求**，直接返回 `Error::MissingToken`。
+- `TokenStats::each` 是「每次接口调用消耗的次数」，官方可能调整，**不要写死为 1**。
+- 该接口没有对应的 `Endpoint` 变体，`Endpoint::from_path("/token/stats")` 返回 `None`。
 
 ## 查询参数与必填性
 
@@ -673,6 +717,7 @@ cargo run --example websocket --features websocket
 | `Error::Encode(String)` | 查询参数序列化失败 | `None` | 错误描述 |
 | `Error::Api { code, msg, path }` | 服务端返回业务错误码（如未收录、参数错误、档位不足） | `Some(code)` | 服务端 `msg` |
 | `Error::EmptyData { path }` | 期望非空数据但 `data` 为 `null` | `None` | 错误描述 |
+| `Error::MissingToken { path }` | 该接口必须提供令牌，但客户端未配置（发请求前就返回） | `None` | 错误描述 |
 
 按业务错误与网络错误分别处理：
 
@@ -748,7 +793,7 @@ async fn main() -> jx3_api::Result<()> {
 | 集成测试 | [`tests/integration.rs`](tests/integration.rs) | 离线部分否 / 线上部分需 `--ignored` | `cargo test --test integration` |
 | 线上真实响应测试 | [`tests/live.rs`](tests/live.rs) | 是（全部 `#[ignore]`） | `cargo test --test live -- --ignored` |
 
-离线测试直接读取 [`tests/fixtures/`](tests/fixtures/) 下的真实响应快照（83 份 JSON，
+离线测试直接读取 [`tests/fixtures/`](tests/fixtures/) 下的真实响应快照（84 份 JSON，
 覆盖成功与业务错误两类包络；多数文件按「接口路径把 `/` 换成 `_`」命名，
 另有 `/active/calendar` 的 `list` 模式补充快照），不消耗 API 调用次数：
 
@@ -827,7 +872,7 @@ jx3-api/
     ├── error.rs                # Error 枚举
     ├── response.rs             # ApiResponse<T> 包络
     ├── serde_util.rs           # 宽松反序列化工具
-    ├── api/                    # 37 个业务域，每个域一个文件
+    ├── api/                    # 38 个业务域，每个域一个文件
     ├── models/                 # 与 api/ 一一对应的数据模型
     └── socket/                 # WebSocket 客户端（feature = "websocket"）
 ```

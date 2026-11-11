@@ -51,6 +51,14 @@ pub enum Error {
         /// 接口路径。
         path: String,
     },
+
+    /// 调用前本地校验失败：该接口必须提供站点令牌，但 [`Client`](crate::Client)
+    /// 上未配置，或显式传入的令牌为空。
+    #[error("接口 [{path}] 需要站点令牌，请先通过 Client::builder().token(..) 配置")]
+    MissingToken {
+        /// 接口路径。
+        path: String,
+    },
 }
 
 impl Error {

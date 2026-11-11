@@ -5,6 +5,9 @@
 //! 覆盖官方 OpenAPI 规范中的全部 **82 个 HTTP 接口**，并提供可选的
 //! WebSocket 实时事件推送客户端。
 //!
+//! 此外单独封装了快照之外的 **`POST /token/stats`**：通过 [`Client::quota`]
+//! 查询令牌档位与剩余次数（该查询不消耗接口次数）。
+//!
 //! ## 快速开始
 //!
 //! ```no_run
@@ -24,6 +27,10 @@
 //!     // 区服状态
 //!     let status = client.server().status_check("长安城", None).await?;
 //!     println!("{status:?}");
+//!
+//!     // 令牌剩余次数
+//!     let quota = client.quota().stats().await?;
+//!     println!("剩余 {} 次", quota.remaining);
 //!
 //!     Ok(())
 //! }

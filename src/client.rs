@@ -177,11 +177,7 @@ impl Inner {
             }
         }
 
-        let mut url = format!(
-            "{}/{}",
-            self.base_url.trim_end_matches('/'),
-            path.trim_start_matches('/')
-        );
+        let mut url = self.build_url_plain(path);
         if !query_string.is_empty() {
             url.push('?');
             url.push_str(&query_string);
@@ -204,6 +200,31 @@ impl Inner {
     pub(crate) async fn request_value(&self, path: &str, query: &impl Serialize) -> Result<Value> {
         let url = self.build_url(path, query)?;
         let response = self.http.get(&url).send().await?;
+        self.parse_envelope(path, response).await
+    }
+
+    /// 发起 `POST` 请求（JSON 请求体）并把 `data` 字段解析成 `T`。
+    ///
+    /// 目前仅用于 `/token/stats`：该接口把令牌放在**请求体**里，且不走
+    /// 「token 注入查询串」的通道，因此这里不复用 [`Inner::build_url`]。
+    pub(crate) async fn post_json<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &impl Serialize,
+    ) -> Result<T> {
+        let response = self
+            .http
+            .post(self.build_url_plain(path))
+            .json(body)
+            .send()
+            .await?;
+        let value = self.parse_envelope(path, response).await?;
+        let raw = value.get("data").cloned().unwrap_or(Value::Null);
+        serde_json::from_value(raw).map_err(Error::from)
+    }
+
+    /// 校验 HTTP 状态与业务码，返回解析后的 JSON 根节点。
+    async fn parse_envelope(&self, path: &str, response: reqwest::Response) -> Result<Value> {
         let status = response.status();
         let body = response.text().await?;
 
@@ -240,7 +261,17 @@ impl Inner {
         Ok(value)
     }
 
-    fn token(&self) -> Option<String> {
+    /// 仅拼接根地址与路径（不附加任何查询参数）。
+    fn build_url_plain(&self, path: &str) -> String {
+        format!(
+            "{}/{}",
+            self.base_url.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        )
+    }
+
+    /// 当前令牌（供 [`crate::api::token`] 读取）。
+    pub(crate) fn token(&self) -> Option<String> {
         self.token.read().ok().and_then(|guard| guard.clone())
     }
 

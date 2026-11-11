@@ -1,6 +1,6 @@
 [package]
 name = "jx3-api"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.85"
 description = "JX3API（剑网3 官方数据接口 https://www.jx3api.com）的 Rust SDK"

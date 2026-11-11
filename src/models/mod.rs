@@ -36,6 +36,7 @@ pub mod skill;
 pub mod sound;
 pub mod steed;
 pub mod tieba;
+pub mod token;
 pub mod trade;
 pub mod trial;
 pub mod tuilan;
@@ -52,5 +53,5 @@ macro_rules! reexport {
 reexport!(
     active, arena, auction, battle, calcd, card, castle, chat, chitu, duowan, event, exam,
     firework, food, fraud, home, mech, mentor, monster, news, ranch, rank, recruit, reward, role,
-    sand, saohua, school, server, skill, sound, steed, tieba, trade, trial, tuilan, wicked,
+    sand, saohua, school, server, skill, sound, steed, tieba, token, trade, trial, tuilan, wicked,
 );

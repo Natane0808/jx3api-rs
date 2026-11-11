@@ -10,16 +10,32 @@
 | --- | --- |
 | 规范来源 | `https://www.jx3api.com/openapi`（HTTP）、`https://www.jx3api.com/openapi.socket.json`（WebSocket） |
 | 规范快照 | [`openapi/openapi.json`](../openapi/openapi.json) 82 条 GET 路径、[`openapi/openapi.socket.json`](../openapi/openapi.socket.json) 39 个 action |
-| 请求方式 | **全部 GET**，参数走 query string（不是 POST + JSON body） |
+| 请求方式 | 82 条规范路径**全部 GET**，参数走 query string；唯一例外是 `POST /token/stats`（见 §0.1） |
 | 基础地址 | `https://www.jx3api.com`，路径形如 `/active/calendar`（**没有** `/data` 前缀） |
 | 鉴权 | `token`（站点令牌）以 query 参数传递；部分接口另需 `ticket`（推栏 Ticket） |
 | 响应包络 | `{ "code": 200, "msg": "success", "data": ..., "time": 1794106931 }` |
 | 档位 | `x-level`：`0` = 免费 / `1` = VIP1 / `2` = VIP2，与 [`Level`](../src/endpoint.rs) 对应 |
 | WebSocket | `wss://socket.nicemoe.cn`，消息 `{ "action": <整数>, "status": ..., "detail": {...} }` |
-| 计费 | 每次 HTTP 请求消耗 1 次额度（余量查询不在本仓库的规范快照内） |
+| 计费 | 每次 HTTP 请求消耗 `each` 次额度（当前 `each = 1`）；`POST /token/stats` 本身不扣次数 |
 
 > 历史坑：旧版本仓库用的是 `https://www.jx3api.com/data` + POST body，该路径**已全部失效**
 > （服务端返回 `404 请求的路径 [App.Data.Xxx] 不存在`）。当前实现严格按官方 OpenAPI 重写。
+
+### 0.1 规范之外的接口：`POST /token/stats`
+
+规范快照只有 82 条 GET 路径，但站点的「令牌配额查询」是 `POST /token/stats`，用 JSON 请求体
+传令牌。它被单独封装在 [`src/api/token.rs`](../src/api/token.rs)（模型在
+[`src/models/token.rs`](../src/models/token.rs)），访问器是 `client.quota()`：
+
+* **不进 `src/endpoint.rs`**：`Endpoint::ALL` 必须与规范 82 条路径严格一致，
+  `scripts/verify_coverage.py` 的 [1b] 会校验这一点；因此该接口没有 `Endpoint` 变体。
+* **不走 `Inner::build_url`**：令牌要放在请求体，且不能污染查询串；使用
+  `Inner::post_json`（唯一 `POST` 通道），响应仍按统一包络解析。
+* **不消耗额度**：实测连续两次查询 `used` 不变，可作为请求前的额度探测。
+* **缺令牌本地拦截**：未配置令牌时返回 `Error::MissingToken`，不发起网络请求。
+
+新增此类「规范外接口」时请一并更新：README 的「令牌配额」小节、`TokenStats` 夹具、
+`tests/live.rs` 的线上用例。
 
 设计取舍：
 
@@ -241,7 +257,7 @@ assert_eq!(Endpoint::from_path("/role/detail"), Some(Endpoint::RoleDetail));
 | `scripts/gen_readme_table.py` | 从 `openapi/openapi.json` 生成 README 接口表；`--check README.md` 校验是否过期 |
 | `scripts/gen_endpoints.py` | 重新生成 `src/endpoint.rs` |
 | `scripts/probe_api.py` | 探测线上接口并刷新 `tests/fixtures/`（**消耗额度**，需 `JX3API_TOKEN`） |
-| `scripts/verify_coverage.py` | 覆盖率自检：82 条路径 / 37 个域 / 夹具测试 / 残留桩 / Endpoint 表一致性；新增「每域成功夹具」与「字段级断言」启发式检查（默认 WARN，`--strict` 计入失败） |
+| `scripts/verify_coverage.py` | 覆盖率自检：82 条路径 / 38 个域 / 夹具测试 / 残留桩 / Endpoint 表一致性；新增「每域成功夹具」与「字段级断言」启发式检查（默认 WARN，`--strict` 计入失败） |
 
 提交前跑一遍：
 
