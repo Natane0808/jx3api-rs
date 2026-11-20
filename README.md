@@ -57,10 +57,30 @@ cargo add jx3-api --features websocket
 
 ```toml
 [dependencies]
-jx3-api = "0.2"
+jx3-api = "0.3"
 # 需要实时事件时启用：
-# jx3-api = { version = "0.2", features = ["websocket"] }
+# jx3-api = { version = "0.3", features = ["websocket"] }
 ```
+
+### TLS 后端
+
+默认使用 **rustls**（纯 Rust 实现，读取操作系统根证书），不依赖 schannel / OpenSSL；
+HTTP 与 WebSocket 使用同一个后端。
+
+如需改用系统 TLS（Windows schannel / Linux OpenSSL / macOS Security.framework）：
+
+```toml
+[dependencies]
+jx3-api = { version = "0.3", default-features = false, features = ["native-tls"] }
+```
+
+| feature | 说明 |
+| --- | --- |
+| `rustls-tls`（默认） | 纯 Rust；无需系统 OpenSSL，便于静态链接；不经过 schannel，沙箱/受限环境更稳 |
+| `native-tls` | 系统实现；需要系统 OpenSSL 头文件（Linux 编译需 `libssl-dev`） |
+
+> 两个 feature 同时启用时（例如 `--all-features`）以 `native-tls` 为准，与 `tokio-tungstenite`
+> 的优先级保持一致，避免 HTTP 与 WebSocket 分叉。
 
 本 crate 只提供异步 API，运行时需由调用方提供 Tokio。要求 Rust 1.85+（edition 2024）：
 
@@ -230,10 +250,10 @@ use jx3_api::Client;
 let client = Client::builder().token("jx3api::xxxxxxxx").build()?;
 
 let stats = client.quota().stats().await?;
-println!("{} 已用 {} / 剩余 {}（每次消耗 {}）",
-    stats.level_name(), stats.used, stats.remaining, stats.each);
+println!("{} 已用 {} / 剩余 {}（总配额 {}）",
+    stats.level_name(), stats.used, stats.remaining, stats.total_quota());
 
-// 永久令牌 expireAt = 0；有期限时给出到期时间戳
+// 无期限令牌（expireAt 为 0 或 null）；有期限时给出到期时间戳
 if let Some(expire_at) = stats.expire_at_unix() {
     println!("将于 {expire_at} 到期");
 }
@@ -258,7 +278,8 @@ match client.quota().stats_of("jx3api::yyyyyyyy").await {
 - **该查询不消耗接口次数**（实测连续调用 `used` 不变），可以在每次请求前放心探测额度。
 - 接口使用 `POST` + JSON 请求体，令牌放在请求体里；这是本库唯一的 `POST` 通道。
 - 客户端未配置令牌时**不发起网络请求**，直接返回 `Error::MissingToken`。
-- `TokenStats::each` 是「每次接口调用消耗的次数」，官方可能调整，**不要写死为 1**。
+- `TokenStats::each` 是「每次接口调用消耗的次数」。服务端在 2026-11-20 之后**不再返回**该字段，
+  此时为 `None`；**不要**假定它等于 1。
 - 该接口没有对应的 `Endpoint` 变体，`Endpoint::from_path("/token/stats")` 返回 `None`。
 
 ## 查询参数与必填性
@@ -744,13 +765,22 @@ async fn main() -> jx3_api::Result<()> {
 }
 ```
 
-服务端统一响应包络为：
+服务端响应包络**有两种形态**，SDK 会自动识别，调用方不需要关心：
 
-```json
+```jsonc
+// 新包络（2026-11-20 起，当前线上格式）
+{ "status": 200, "detail": { "...": "..." } }
+// 失败时 detail 是错误描述字符串
+{ "status": 404, "detail": "令牌不存在" }
+
+// 旧包络（2026-11 之前，仍被兼容）
 { "code": 200, "msg": "success", "data": { "...": "..." }, "time": 1794106931 }
 ```
 
-SDK 的业务方法默认直接返回 `data`；需要完整包络（`code` / `msg` / `time`）时使用
+映射关系：`status`/`code` → [`ApiResponse::code`]，`detail`（成功）→ `data`，
+`detail`（失败字符串）/ `msg` → `msg`。新包络不返回 `time`，此时 `ApiResponse::time` 为 `0`。
+
+SDK 的业务方法默认直接返回 `data`；需要完整包络时使用
 [`Client::request`](https://docs.rs/jx3-api/latest/jx3_api/struct.Client.html#method.request)，
 需要绕过业务方法调用未封装接口时使用 `Client::get`：
 
@@ -876,6 +906,18 @@ jx3-api/
     ├── models/                 # 与 api/ 一一对应的数据模型
     └── socket/                 # WebSocket 客户端（feature = "websocket"）
 ```
+
+## 已知问题
+
+- **响应包络改版**：服务端在 2026-11-20 前后把包络从 `code / msg / data / time` 换成
+  `status / detail`。本版本已同时兼容两种形态（见上文「错误处理」），但仓库内的
+  OpenAPI 快照仍是旧版，接口表按该快照生成。
+- **部分路由下线**：截至 2026-11-20 实测，下列路由返回**路由级** `404 Not Found`
+  （与业务错误不同，业务错误会返回中文描述）：
+  `/home/furniture`、`/home/travel`、`/duowan/statistics`、`/tuilan/achievement`。
+  SDK 暂时保留这些方法，以便服务端恢复后可直接使用；若确认永久下线，可移除对应
+  `src/api/*.rs` 方法、模型与 `src/endpoint.rs` 条目。
+- `/arena/*`、`/school/*` 需要推栏 ticket，`/sound/converter` 需要语音合成凭据。
 
 ## 更新日志
 

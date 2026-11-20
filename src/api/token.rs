@@ -75,7 +75,7 @@ impl TokenApi {
     /// if !stats.is_perpetual() {
     ///     println!("将于时间戳 {} 到期", stats.expire_at);
     /// }
-    /// println!("剩余 {} 次（每次消耗 {}）", stats.remaining, stats.each);
+    /// println!("剩余 {} 次（总配额 {}）", stats.remaining, stats.total_quota());
     /// # Ok(())
     /// # }
     /// ```

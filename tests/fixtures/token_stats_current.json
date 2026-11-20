@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "detail": {
+    "level": 2,
+    "used": 334,
+    "remaining": 4666,
+    "expireAt": null,
+    "valid": true,
+    "history": [
+      {
+        "action": "purchase",
+        "at": 1794106809,
+        "from": null,
+        "to": "jx3api::0606****c11a",
+        "no": "0000000000000000000000",
+        "count": 5000
+      }
+    ]
+  }
+}

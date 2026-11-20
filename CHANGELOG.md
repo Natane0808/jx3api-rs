@@ -5,6 +5,38 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.0] - 2026-11-20
+
+### Fixed
+
+- **适配服务端响应包络改版**：站点在 2026-11-20 前后把 `{code, msg, data, time}` 换成了
+  `{status, detail}`（失败时 `detail` 是错误描述字符串）。0.2.x 在该改版后所有请求都会
+  返回 `Error::Api { code: 0 }`，本版本同时兼容**新旧两种包络**，旧夹具与旧部署无需改动。
+- `ApiResponse::time` 在新包络下为 `0`（服务端不再返回该字段）。
+- `/arena/recent` 的 `performance` 若显式返回 `null` 不再导致整条响应解析失败。
+
+### Added
+
+- **TLS 后端可选**：新增 `rustls-tls`（默认）与 `native-tls` 两个 feature，HTTP 与
+  WebSocket 使用同一后端；两者同时启用时以 `native-tls` 为准（与 `tokio-tungstenite`
+  优先级一致）。默认改为 rustls 后，不再依赖 schannel / OpenSSL，也不受系统证书链
+  与沙箱凭证限制。
+- 新增夹具 `tests/fixtures/token_stats_current.json`（当前包络形态）。
+
+### Changed
+
+- `TokenStats::each` 由 `i64` 改为 `Option<i64>`：服务端 2026-11-20 起不再下发该字段，
+  此时为 `None`。**这是 API 破坏性变更**，故提升 minor 版本号。
+- `reqwest` 关闭默认特性，改由本 crate 的 TLS feature 决定后端；因此 `http_client()`
+  注入自定义客户端时，TLS 后端以该客户端自身的配置为准。
+
+### Notes / 已知问题
+
+- 截至 2026-11-20 实测，以下路由返回**路由级** `404 Not Found`（与业务错误区分：
+  业务错误返回中文描述），疑似服务端下线，SDK 暂时保留：
+  `/home/furniture`、`/home/travel`、`/duowan/statistics`、`/tuilan/achievement`。
+- 仓库内 `openapi/openapi.json` 仍是旧版快照，接口表按该快照生成。
+
 ## [0.2.1] - 2026-11-11
 
 ### Added
@@ -85,6 +117,7 @@
 
 - 初始版本：基于旧版 `/data` 前缀 + `POST` 请求的接口封装。
 
+[0.3.0]: https://github.com/Natane0808/jx3api-rs/releases/tag/v0.3.0
 [0.2.1]: https://github.com/Natane0808/jx3api-rs/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Natane0808/jx3api-rs/releases/tag/v0.2.0
 [0.1.0]: https://crates.io/crates/jx3-api/0.1.0

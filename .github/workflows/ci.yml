@@ -72,6 +72,32 @@ jobs:
           npx -y tombi@1.10.0 lint Cargo.toml
           npx -y tombi@1.10.0 format --check Cargo.toml
 
+  tls:
+    name: TLS backend (${{ matrix.tls }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tls: [rustls-tls, native-tls]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo test (${{ matrix.tls }})
+        run: cargo test --no-default-features --features ${{ matrix.tls }} --locked
+
+      - name: cargo test (${{ matrix.tls }} + websocket)
+        run: cargo test --no-default-features --features ${{ matrix.tls }},websocket --locked
+
+      - name: cargo build --examples (${{ matrix.tls }})
+        run: cargo build --examples --no-default-features --features ${{ matrix.tls }} --locked
+
   msrv:
     name: MSRV 1.85
     runs-on: ubuntu-latest

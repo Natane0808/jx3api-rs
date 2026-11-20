@@ -344,14 +344,17 @@ async fn live_token_stats() {
         .expect("/token/stats 应当返回成功响应");
     assert!(stats.level >= 1, "令牌档位应为 VIP1 及以上");
     assert!(stats.valid, "令牌应当有效");
-    assert!(stats.each >= 1, "每次消耗不应为 0");
     assert_eq!(
         stats.total_quota(),
         stats.used.saturating_add(stats.remaining),
         "总配额应为已用 + 剩余"
     );
+    // `each` 在 2026-11-20 之后不再下发（为 None），有值时也不应小于 1。
+    if let Some(each) = stats.each {
+        assert!(each >= 1, "每次消耗不应小于 1");
+    }
     eprintln!(
-        "/token/stats：{} 已用 {} / 剩余 {} / 每次 {}",
+        "/token/stats：{} 已用 {} / 剩余 {} / each={:?}",
         stats.level_name(),
         stats.used,
         stats.remaining,

@@ -60,7 +60,11 @@ def endpoint_table_paths() -> dict[str, str]:
 
 
 def fixture_success_stats() -> tuple[dict[str, int], dict[str, int]]:
-    """统计每个业务域的成功夹具（`code == 200`）数量与全部夹具数量。"""
+    """统计每个业务域的成功夹具数量与全部夹具数量。
+
+    成功判定同时兼容两种包络：旧 `{code: 200}` 与 2026-11-20 起的
+    `{status: 200}`。
+    """
     success = {domain: 0 for domain in DOMAINS}
     total = {domain: 0 for domain in DOMAINS}
     for path in sorted(FIXTURES.glob("*.json")):
@@ -72,7 +76,8 @@ def fixture_success_stats() -> tuple[dict[str, int], dict[str, int]]:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
-        if payload.get("code") == 200:
+        code = payload.get("status", payload.get("code"))
+        if code == 200:
             success[domain] += 1
     return success, total
 

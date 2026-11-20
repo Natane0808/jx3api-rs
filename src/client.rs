@@ -116,29 +116,16 @@ impl Client {
         path: &str,
         query: &impl Serialize,
     ) -> Result<ApiResponse<T>> {
-        let value = self.inner.request_value(path, query).await?;
-        let code = value
-            .get("code")
-            .and_then(Value::as_i64)
-            .unwrap_or_default() as i32;
-        let msg = value
-            .get("msg")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_owned();
-        let time = value
-            .get("time")
-            .and_then(Value::as_i64)
-            .unwrap_or_default();
-        let data = match value.get("data") {
-            None | Some(Value::Null) => None,
-            Some(raw) => Some(serde_json::from_value(raw.clone())?),
+        let parsed = self.inner.request_parsed(path, query).await?;
+        let data = match parsed.data {
+            Value::Null => None,
+            raw => Some(serde_json::from_value(raw)?),
         };
         Ok(ApiResponse {
-            code,
-            msg,
+            code: parsed.code,
+            msg: parsed.msg,
             data,
-            time,
+            time: parsed.time,
         })
     }
 
@@ -148,9 +135,8 @@ impl Client {
     ///
     /// 网络异常、响应无法解析，或服务端返回非 `200` 的业务码。
     pub async fn get<T: DeserializeOwned>(&self, path: &str, query: &impl Serialize) -> Result<T> {
-        let value = self.inner.request_value(path, query).await?;
-        let raw = value.get("data").cloned().unwrap_or(Value::Null);
-        serde_json::from_value(raw).map_err(Error::from)
+        let parsed = self.inner.request_parsed(path, query).await?;
+        serde_json::from_value(parsed.data).map_err(Error::from)
     }
 }
 
@@ -191,19 +177,22 @@ impl Inner {
         path: &str,
         query: &impl Serialize,
     ) -> Result<T> {
-        let value = self.request_value(path, query).await?;
-        let raw = value.get("data").cloned().unwrap_or(Value::Null);
-        serde_json::from_value(raw).map_err(Error::from)
+        let parsed = self.request_parsed(path, query).await?;
+        serde_json::from_value(parsed.data).map_err(Error::from)
     }
 
-    /// 发起 GET 请求并返回解析后的 JSON 根节点。
-    pub(crate) async fn request_value(&self, path: &str, query: &impl Serialize) -> Result<Value> {
+    /// 发起 GET 请求并返回已解析的业务包络。
+    pub(crate) async fn request_parsed(
+        &self,
+        path: &str,
+        query: &impl Serialize,
+    ) -> Result<Parsed> {
         let url = self.build_url(path, query)?;
         let response = self.http.get(&url).send().await?;
-        self.parse_envelope(path, response).await
+        read_parsed(path, response).await
     }
 
-    /// 发起 `POST` 请求（JSON 请求体）并把 `data` 字段解析成 `T`。
+    /// 发起 `POST` 请求（JSON 请求体）并把业务数据解析成 `T`。
     ///
     /// 目前仅用于 `/token/stats`：该接口把令牌放在**请求体**里，且不走
     /// 「token 注入查询串」的通道，因此这里不复用 [`Inner::build_url`]。
@@ -218,47 +207,8 @@ impl Inner {
             .json(body)
             .send()
             .await?;
-        let value = self.parse_envelope(path, response).await?;
-        let raw = value.get("data").cloned().unwrap_or(Value::Null);
-        serde_json::from_value(raw).map_err(Error::from)
-    }
-
-    /// 校验 HTTP 状态与业务码，返回解析后的 JSON 根节点。
-    async fn parse_envelope(&self, path: &str, response: reqwest::Response) -> Result<Value> {
-        let status = response.status();
-        let body = response.text().await?;
-
-        let value: Value = match serde_json::from_str(&body) {
-            Ok(value) => value,
-            Err(err) => {
-                if status.is_success() {
-                    return Err(Error::Decode(err));
-                }
-                return Err(Error::HttpStatus {
-                    status: status.as_u16(),
-                    body,
-                });
-            }
-        };
-
-        let code = value
-            .get("code")
-            .and_then(Value::as_i64)
-            .unwrap_or_default() as i32;
-        if code != 200 {
-            let msg = value
-                .get("msg")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned();
-            return Err(Error::Api {
-                code,
-                msg,
-                path: path.to_owned(),
-            });
-        }
-
-        Ok(value)
+        let parsed = read_parsed(path, response).await?;
+        serde_json::from_value(parsed.data).map_err(Error::from)
     }
 
     /// 仅拼接根地址与路径（不附加任何查询参数）。
@@ -290,6 +240,93 @@ impl Inner {
             *guard = ticket;
         }
     }
+}
+
+/// 已解析的业务包络。
+///
+/// 服务端在 2026-11-20 把响应包络从 `code` / `msg` / `data` / `time` 换成了
+/// `status` / `detail`，这里把两种形态归一化后交给上层。
+#[derive(Debug, Clone)]
+pub(crate) struct Parsed {
+    /// 业务状态码：新包络取 `status`，旧包络取 `code`；`200` 表示成功。
+    pub(crate) code: i32,
+    /// 业务描述：旧包络取 `msg`；新包络失败时 `detail` 是描述字符串，此时取它。
+    pub(crate) msg: String,
+    /// 业务数据：新包络取 `detail`（成功时是对象 / 数组），旧包络取 `data`。
+    pub(crate) data: Value,
+    /// 服务端时间戳（秒）。新包络不再返回该字段，此时为 `0`。
+    pub(crate) time: i64,
+}
+
+/// 读取响应并解析包络。
+async fn read_parsed(path: &str, response: reqwest::Response) -> Result<Parsed> {
+    let status = response.status().as_u16();
+    let body = response.text().await?;
+    parse_body(path, status, body)
+}
+
+/// 解析响应体，兼容新旧两种包络。
+///
+/// * 旧包络（2026-11 之前）：`{ "code": 200, "msg": "success", "data": …, "time": … }`
+/// * 新包络（2026-11-20 起）：`{ "status": 200, "detail": … }`，其中失败时
+///   `detail` 是错误描述字符串，成功时是业务数据。
+///
+/// 判定方式是「有 `status` 且没有 `code`」，因此两种形态可以共存，
+/// 仓库里 84 份旧包络夹具也仍然可以解析。
+pub(crate) fn parse_body(path: &str, http_status: u16, body: String) -> Result<Parsed> {
+    let value: Value = match serde_json::from_str(&body) {
+        Ok(value) => value,
+        Err(err) => {
+            if (200..300).contains(&http_status) {
+                return Err(Error::Decode(err));
+            }
+            return Err(Error::HttpStatus {
+                status: http_status,
+                body,
+            });
+        }
+    };
+
+    let is_new = value.get("status").is_some() && value.get("code").is_none();
+    let code = value
+        .get(if is_new { "status" } else { "code" })
+        .and_then(Value::as_i64)
+        .unwrap_or_default() as i32;
+
+    let (msg, data, time) = if is_new {
+        let detail = value.get("detail").cloned().unwrap_or(Value::Null);
+        // 失败时 detail 是描述字符串；成功时 detail 是业务数据。
+        let msg = detail.as_str().unwrap_or_default().to_owned();
+        let data = if code == 200 { detail } else { Value::Null };
+        (msg, data, 0)
+    } else {
+        let msg = value
+            .get("msg")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        let data = value.get("data").cloned().unwrap_or(Value::Null);
+        let time = value
+            .get("time")
+            .and_then(Value::as_i64)
+            .unwrap_or_default();
+        (msg, data, time)
+    };
+
+    if code != 200 {
+        return Err(Error::Api {
+            code,
+            msg,
+            path: path.to_owned(),
+        });
+    }
+
+    Ok(Parsed {
+        code,
+        msg,
+        data,
+        time,
+    })
 }
 
 fn push_pair(query: &mut String, key: &str, value: &str) {
@@ -373,6 +410,19 @@ impl ClientBuilder {
             Some(http) => http,
             None => {
                 let mut builder = HttpClient::builder().timeout(self.timeout);
+
+                // TLS 后端由 crate 的 feature 决定。两个 feature 同时启用时
+                // （例如 `--all-features`）保持 reqwest 的默认选择（native-tls），
+                // 这样与 tokio-tungstenite 的优先级一致，HTTP 与 WebSocket 不会分叉。
+                #[cfg(all(feature = "rustls-tls", not(feature = "native-tls")))]
+                {
+                    builder = builder.use_rustls_tls();
+                }
+                #[cfg(all(feature = "native-tls", not(feature = "rustls-tls")))]
+                {
+                    builder = builder.use_native_tls();
+                }
+
                 if let Ok(value) = reqwest::header::HeaderValue::from_str(&self.user_agent) {
                     builder = builder.default_headers({
                         let mut headers = reqwest::header::HeaderMap::new();
@@ -453,5 +503,78 @@ mod tests {
             .build_url("/active/calendar", &Vec::<(String, String)>::new())
             .unwrap();
         assert_eq!(url, "https://example.com/active/calendar");
+    }
+    // ---- 包络解析：兼容 2026-11-20 前后的两种响应格式 ----
+
+    #[test]
+    fn parses_legacy_envelope() {
+        let body = r#"{"code":200,"msg":"success","data":{"date":"2026-11-08"},"time":1794106931}"#;
+        let parsed =
+            parse_body("/active/calendar", 200, body.to_owned()).expect("旧包络应解析成功");
+        assert_eq!(parsed.code, 200);
+        assert_eq!(parsed.msg, "success");
+        assert_eq!(parsed.time, 1_794_106_931);
+        assert_eq!(parsed.data["date"], "2026-11-08");
+    }
+
+    #[test]
+    fn parses_new_status_detail_envelope() {
+        // 2026-11-20 起站点改为 { status, detail }，且不再返回 time。
+        let body = r#"{"status":200,"detail":{"date":"2026-11-20","war":"大战！英雄南山马场"}}"#;
+        let parsed =
+            parse_body("/active/calendar", 200, body.to_owned()).expect("新包络应解析成功");
+        assert_eq!(parsed.code, 200);
+        assert!(parsed.msg.is_empty(), "成功响应没有错误描述");
+        assert_eq!(parsed.time, 0, "新包络不返回 time");
+        assert_eq!(parsed.data["war"], "大战！英雄南山马场");
+    }
+
+    #[test]
+    fn new_envelope_error_uses_detail_as_message() {
+        let body = r#"{"status":404,"detail":"令牌不存在"}"#;
+        match parse_body("/token/stats", 200, body.to_owned()) {
+            Err(Error::Api { code, msg, path }) => {
+                assert_eq!(code, 404);
+                assert_eq!(msg, "令牌不存在");
+                assert_eq!(path, "/token/stats");
+            }
+            other => panic!("应映射为 Error::Api，实际 {other:?}"),
+        }
+    }
+
+    #[test]
+    fn legacy_envelope_error_uses_msg() {
+        let body = r#"{"code":400,"msg":"参数 [name] 不能为空","data":{}}"#;
+        match parse_body("/role/detail", 200, body.to_owned()) {
+            Err(Error::Api { code, msg, .. }) => {
+                assert_eq!(code, 400);
+                assert_eq!(msg, "参数 [name] 不能为空");
+            }
+            other => panic!("应映射为 Error::Api，实际 {other:?}"),
+        }
+    }
+
+    #[test]
+    fn non_json_body_maps_by_http_status() {
+        // 非 2xx 且不是 JSON → HttpStatus
+        match parse_body("/x", 502, "<html>bad gateway</html>".to_owned()) {
+            Err(Error::HttpStatus { status, body }) => {
+                assert_eq!(status, 502);
+                assert!(body.contains("bad gateway"));
+            }
+            other => panic!("应映射为 Error::HttpStatus，实际 {other:?}"),
+        }
+        // 2xx 但不是 JSON → Decode
+        match parse_body("/x", 200, "not json".to_owned()) {
+            Err(Error::Decode(_)) => {}
+            other => panic!("应映射为 Error::Decode，实际 {other:?}"),
+        }
+    }
+
+    #[test]
+    fn new_envelope_null_detail_yields_null_data() {
+        let body = r#"{"status":200,"detail":null}"#;
+        let parsed = parse_body("/x", 200, body.to_owned()).expect("应解析成功");
+        assert_eq!(parsed.data, Value::Null);
     }
 }

@@ -19,11 +19,11 @@ use serde::{Deserialize, Serialize};
 /// let client = Client::builder().token("jx3api::xxxxxxxx").build()?;
 /// let stats = client.quota().stats().await?;
 /// println!(
-///     "{}：已用 {}，剩余 {}，每次消耗 {}",
+///     "{}：已用 {}，剩余 {}，总配额 {}",
 ///     stats.level_name(),
 ///     stats.used,
 ///     stats.remaining,
-///     stats.each
+///     stats.total_quota()
 /// );
 /// # Ok(())
 /// # }
@@ -40,10 +40,13 @@ pub struct TokenStats {
     /// 剩余可用次数。
     #[serde(deserialize_with = "crate::serde_util::flexible_i64")]
     pub remaining: i64,
-    /// 每次接口调用消耗的次数（当前为 `1`，官方可能调整，**不要写死**）。
-    #[serde(deserialize_with = "crate::serde_util::flexible_i64")]
-    pub each: i64,
-    /// 到期时间戳（秒）；`0` 表示永久有效。
+    /// 每次接口调用消耗的次数。
+    ///
+    /// 服务端在 2026-11-20 起**不再返回该字段**，此时为 `None`；
+    /// 拿到旧缓存值时可能为 `Some(1)`。**不要**假定它等于 1。
+    #[serde(default)]
+    pub each: Option<i64>,
+    /// 到期时间戳（秒）。`0` 或 `null` 都表示没有期限（永久有效）。
     #[serde(
         rename = "expireAt",
         deserialize_with = "crate::serde_util::flexible_i64"
@@ -119,7 +122,8 @@ mod tests {
     }
 
     #[test]
-    fn parses_fixture() {
+    fn parses_legacy_fixture() {
+        // 2026-11-20 之前的旧包络（code / msg / data / time）。
         // 真实响应快照：订单号已脱敏，令牌本身不在响应中（服务端只回掩码）。
         let envelope: ApiResponse<TokenStats> =
             parse(include_str!("../../tests/fixtures/token_stats.json"));
@@ -129,7 +133,7 @@ mod tests {
         assert_eq!(stats.level, 2);
         assert_eq!(stats.used, 321);
         assert_eq!(stats.remaining, 4679);
-        assert_eq!(stats.each, 1);
+        assert_eq!(stats.each, Some(1), "旧包络里有 each");
         assert_eq!(stats.expire_at, 0);
         assert!(stats.valid);
         assert_eq!(stats.history.len(), 1);
@@ -142,12 +146,35 @@ mod tests {
     }
 
     #[test]
+    fn parses_current_fixture_through_envelope_parser() {
+        // 2026-11-20 起的 {status, detail} 包络：经真实解析链路（parse_body）后
+        // 再反序列化模型，同时验证「包络兼容层 + 模型」两段都对。
+        let parsed = crate::client::parse_body(
+            "/token/stats",
+            200,
+            include_str!("../../tests/fixtures/token_stats_current.json").to_owned(),
+        )
+        .expect("当前包络应解析成功");
+        assert_eq!(parsed.code, 200);
+
+        let stats: TokenStats = serde_json::from_value(parsed.data).expect("模型应当能解析");
+        assert_eq!(stats.level, 2);
+        assert_eq!(stats.used, 334);
+        assert_eq!(stats.remaining, 4666);
+        assert_eq!(stats.each, None, "当前包络已不再返回 each");
+        assert_eq!(stats.expire_at, 0, "expireAt 为 null 时按无期限处理");
+        assert!(stats.valid);
+        assert_eq!(stats.history.len(), 1);
+        assert!(stats.history[0].to.contains("****"));
+    }
+
+    #[test]
     fn helper_methods() {
         let stats = TokenStats {
             level: 2,
             used: 321,
             remaining: 4679,
-            each: 1,
+            each: Some(1),
             expire_at: 0,
             valid: true,
             history: Vec::new(),
@@ -174,13 +201,18 @@ mod tests {
     #[test]
     fn accepts_string_and_null_forms() {
         // 官方数值字段为整数，但沿用仓库约定容忍数字字符串与 null。
-        let raw = r#"{"level":"2","used":"10","remaining":null,"each":"1",
+        // `each` 现在是 Option（服务端已不再返回），因此这里覆盖「数值」与「缺失」两种。
+        let raw = r#"{"level":"2","used":"10","remaining":null,"each":1,
                       "expireAt":"0","valid":1,"history":[]}"#;
         let stats: TokenStats = serde_json::from_str(raw).unwrap();
         assert_eq!(stats.level, 2);
         assert_eq!(stats.used, 10);
         assert_eq!(stats.remaining, 0);
+        assert_eq!(stats.each, Some(1));
         assert!(stats.valid);
+
+        let no_each: TokenStats = serde_json::from_str(r#"{"level":2}"#).unwrap();
+        assert_eq!(no_each.each, None, "缺字段时 each 应为 None");
     }
 
     #[test]

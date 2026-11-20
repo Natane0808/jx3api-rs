@@ -13,10 +13,11 @@
 | 请求方式 | 82 条规范路径**全部 GET**，参数走 query string；唯一例外是 `POST /token/stats`（见 §0.1） |
 | 基础地址 | `https://www.jx3api.com`，路径形如 `/active/calendar`（**没有** `/data` 前缀） |
 | 鉴权 | `token`（站点令牌）以 query 参数传递；部分接口另需 `ticket`（推栏 Ticket） |
-| 响应包络 | `{ "code": 200, "msg": "success", "data": ..., "time": 1794106931 }` |
+| 响应包络 | **两种并存**：旧 `{ "code": 200, "msg": "success", "data": ..., "time": ... }`；新（2026-11-20 起）`{ "status": 200, "detail": ... }`，失败时 `detail` 是错误描述字符串。见 §0.2 |
 | 档位 | `x-level`：`0` = 免费 / `1` = VIP1 / `2` = VIP2，与 [`Level`](../src/endpoint.rs) 对应 |
 | WebSocket | `wss://socket.nicemoe.cn`，消息 `{ "action": <整数>, "status": ..., "detail": {...} }` |
-| 计费 | 每次 HTTP 请求消耗 `each` 次额度（当前 `each = 1`）；`POST /token/stats` 本身不扣次数 |
+| 计费 | 每次 HTTP 请求消耗 `each` 次额度（服务端 2026-11-20 起不再下发 `each`，按 1 计）；`POST /token/stats` 本身不扣次数 |
+| TLS | 由 crate 的 `rustls-tls`（默认）/ `native-tls` feature 选择，两者同时启用时以 native-tls 为准 |
 
 > 历史坑：旧版本仓库用的是 `https://www.jx3api.com/data` + POST body，该路径**已全部失效**
 > （服务端返回 `404 请求的路径 [App.Data.Xxx] 不存在`）。当前实现严格按官方 OpenAPI 重写。
@@ -36,6 +37,28 @@
 
 新增此类「规范外接口」时请一并更新：README 的「令牌配额」小节、`TokenStats` 夹具、
 `tests/live.rs` 的线上用例。
+
+### 0.2 响应包络的两代格式
+
+服务端在 **2026-11-20** 前后把全局包络从 `code / msg / data / time` 换成
+`status / detail`（失败时 `detail` 是错误描述字符串，成功时是业务数据），
+`time` 不再返回。SDK 在 [`client.rs`](../src/client.rs) 的 `parse_body` 里统一归一化：
+
+| 概念 | 旧包络 | 新包络 |
+| --- | --- | --- |
+| 状态码 | `code` | `status` |
+| 错误描述 | `msg` | `detail`（为字符串时） |
+| 业务数据 | `data` | `detail`（为对象 / 数组时） |
+| 服务端时间 | `time` | 无（`ApiResponse::time` 为 `0`） |
+
+判定方式是「有 `status` 且没有 `code`」。**不要**把它改成二选一：仓库里 85 份夹具
+绝大多数是旧包络，两种形态必须长期共存。
+
+夹具与测试的两条纪律：
+
+* 新增夹具优先抓当前线上格式（`status` / `detail`）；旧格式夹具保留，作为兼容性回归。
+* `tests/integration.rs` 的包络校验与 `scripts/verify_coverage.py` 的成功夹具统计都已
+  同时识别 `code` 与 `status`，新增夹具不必再改这两处。
 
 设计取舍：
 

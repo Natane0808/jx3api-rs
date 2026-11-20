@@ -1,6 +1,6 @@
 [package]
 name = "jx3-api"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "JX3API（剑网3 官方数据接口 https://www.jx3api.com）的 Rust SDK"
@@ -17,7 +17,6 @@ categories = ["api-bindings", "asynchronous", "web-programming"]
 all-features = true
 
 [dependencies]
-reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_urlencoded = "0.7"
@@ -27,15 +26,20 @@ thiserror = "2"
 futures-util = { version = "0.3", default-features = false, features = ["sink"], optional = true }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"], optional = true }
 
-# 用子表而非 inline table：Tombi 会按 TOML 1.1 风格把长 inline table 折成多行，
+# TLS 后端由本 crate 的 `rustls-tls` / `native-tls` feature 选择，因此关掉
+# reqwest 的默认特性，只保留与 TLS 无关的那几个。
+#
+# 用依赖子表而非 inline table：Tombi 会按 TOML 1.1 风格把长 inline table 折成多行，
 # 而 Cargo 1.85（本 crate 的 MSRV）只接受 TOML 1.0 的「inline table 必须单行」。
+[dependencies.reqwest]
+version = "0.12.28"
+default-features = false
+features = ["charset", "http2", "json", "system-proxy"]
+
 [dependencies.tokio-tungstenite]
 version = "0.30"
 default-features = false
-features = [
-  "connect",
-  "native-tls",
-]
+features = ["connect"]
 optional = true
 
 [dev-dependencies]
@@ -43,6 +47,12 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 
 [features]
-default = []
+default = ["rustls-tls"]
+# 系统 TLS 实现（Windows = schannel，Linux = OpenSSL，macOS = Security.framework）。
+# 若与 `rustls-tls` 同时启用，以 native-tls 为准（与 tokio-tungstenite 的优先级一致）。
+native-tls = ["reqwest/native-tls", "tokio-tungstenite?/native-tls"]
+# 纯 Rust TLS 实现（ring 作为加密后端），读取操作系统根证书。
+# 不依赖 schannel / OpenSSL，便于静态链接与无系统证书库的环境。
+rustls-tls = ["reqwest/rustls-tls-native-roots", "tokio-tungstenite?/rustls-tls-native-roots"]
 # 启用 WebSocket 实时事件推送客户端
 websocket = ["dep:futures-util", "dep:tokio", "dep:tokio-tungstenite"]

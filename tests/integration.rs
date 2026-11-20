@@ -62,39 +62,58 @@ fn fixtures_are_valid_envelopes() {
             "夹具 {name} 的根节点应为 JSON 对象，实际为 {value:?}"
         );
 
+        // 兼容两种包络：
+        //   旧：{ code, msg, data, time }（2026-11 之前）
+        //   新：{ status, detail }（2026-11-20 起，失败时 detail 是错误描述）
+        let is_new = value.get("status").is_some() && value.get("code").is_none();
         let code = value
-            .get("code")
-            .unwrap_or_else(|| panic!("夹具 {name} 缺少 `code` 字段"));
+            .get(if is_new { "status" } else { "code" })
+            .unwrap_or_else(|| panic!("夹具 {name} 缺少 `code` / `status` 字段"));
         assert!(
             code.is_i64() || code.is_u64(),
-            "夹具 {name} 的 `code` 应为整数，实际为 {code:?}"
+            "夹具 {name} 的状态码应为整数，实际为 {code:?}"
         );
-
-        // `msg` 与 `time` 是官方包络的固定字段。
-        assert!(
-            value.get("msg").map(serde_json::Value::is_string) == Some(true),
-            "夹具 {name} 缺少字符串类型的 `msg` 字段"
-        );
-        assert!(
-            value.get("time").map(|time| time.is_i64() || time.is_u64()) == Some(true),
-            "夹具 {name} 缺少整数类型的 `time` 字段"
-        );
-
-        // 成功响应必须带 `data` 键（允许为 null，但键要在）。
         let code_value = code.as_i64().unwrap_or_default();
-        if code_value == 200 {
-            assert!(
-                value.get("data").is_some(),
-                "夹具 {name} 的成功响应缺少 `data` 字段"
-            );
+
+        if is_new {
+            let detail = value
+                .get("detail")
+                .unwrap_or_else(|| panic!("夹具 {name} 缺少 `detail` 字段"));
+            if code_value == 200 {
+                assert!(
+                    !detail.is_null(),
+                    "夹具 {name} 的成功响应 `detail` 不应为 null"
+                );
+            } else {
+                assert!(
+                    detail.as_str().is_some_and(|msg| !msg.is_empty()),
+                    "夹具 {name} 的业务错误响应 `detail` 应为错误描述"
+                );
+            }
         } else {
+            // `msg` 与 `time` 是旧包络的固定字段。
             assert!(
-                value
-                    .get("msg")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|msg| !msg.is_empty()),
-                "夹具 {name} 的业务错误响应应带错误描述"
+                value.get("msg").map(serde_json::Value::is_string) == Some(true),
+                "夹具 {name} 缺少字符串类型的 `msg` 字段"
             );
+            assert!(
+                value.get("time").map(|time| time.is_i64() || time.is_u64()) == Some(true),
+                "夹具 {name} 缺少整数类型的 `time` 字段"
+            );
+            if code_value == 200 {
+                assert!(
+                    value.get("data").is_some(),
+                    "夹具 {name} 的成功响应缺少 `data` 字段"
+                );
+            } else {
+                assert!(
+                    value
+                        .get("msg")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|msg| !msg.is_empty()),
+                    "夹具 {name} 的业务错误响应应带错误描述"
+                );
+            }
         }
     }
 }
@@ -109,10 +128,14 @@ fn fixtures_cover_success_and_error_envelopes() {
     for (name, raw) in &fixtures {
         let value: serde_json::Value = serde_json::from_str(raw)
             .unwrap_or_else(|err| panic!("夹具 {name} 不是合法 JSON: {err}"));
-        match value.get("code").and_then(serde_json::Value::as_i64) {
+        let code = value
+            .get("status")
+            .or_else(|| value.get("code"))
+            .and_then(serde_json::Value::as_i64);
+        match code {
             Some(200) => success += 1,
             Some(_) => failure += 1,
-            None => panic!("夹具 {name} 缺少整数 `code` 字段"),
+            None => panic!("夹具 {name} 缺少整数 `code` / `status` 字段"),
         }
     }
 
@@ -228,6 +251,9 @@ async fn online_api_response_envelope_smoke() {
         "业务码应为 200，实际 {}",
         response.code
     );
-    assert!(!response.msg.is_empty(), "响应应带 msg");
-    assert!(response.time > 0, "响应应带服务端时间戳");
+    assert!(response.data.is_some(), "响应应带业务数据");
+
+    // 包络在 2026-11-20 改版：旧包络有 `msg` / `time`，新包络 `{status, detail}`
+    // 两者都没有。因此这里只要求「成功且带数据」，不断言 msg 非空。
+    assert!(response.time >= 0, "服务端时间戳应为非负数");
 }
